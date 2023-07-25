@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @AllArgsConstructor
 public class UrlStatistic {
+    @EqualsAndHashCode.Include
     private String url;
-    private volatile int total;
+    private int total;
 }

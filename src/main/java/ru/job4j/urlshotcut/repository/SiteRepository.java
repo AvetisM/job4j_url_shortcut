@@ -4,10 +4,12 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import ru.job4j.urlshotcut.domain.Site;
 
+import java.util.Optional;
+
 @Repository
 public interface SiteRepository extends CrudRepository<Site, Integer> {
-    Site findByUrl(String url);
+    Optional<Site> findByUrl(String url);
 
-    Site findByLogin(String login);
+    Optional<Site> findByLogin(String login);
 
 }

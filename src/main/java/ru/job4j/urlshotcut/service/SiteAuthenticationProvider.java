@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import ru.job4j.urlshotcut.domain.Site;
 import ru.job4j.urlshotcut.repository.SiteRepository;
 
+import java.util.Optional;
+
 import static java.util.Collections.emptyList;
 
 @Service
@@ -28,10 +30,11 @@ public class SiteAuthenticationProvider implements AuthenticationProvider {
         String userName = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        Site site = siteRepository.findByLogin(userName);
-        if (site == null) {
+        Optional<Site> siteOptional = siteRepository.findByLogin(userName);
+        if (siteOptional.isEmpty()) {
             throw new BadCredentialsException(userName);
         }
+        Site site = siteOptional.get();
         if (!encoder.matches(password, site.getPassword())) {
             throw new BadCredentialsException(password);
         }

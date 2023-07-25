@@ -17,5 +17,8 @@ public class Url {
     @NotBlank(message = "Url must be not empty")
     private String url;
     private String code;
-    private volatile int total;
+    private int total;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "site_id")
+    private Site site;
 }
