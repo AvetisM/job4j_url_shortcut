@@ -1,5 +1,6 @@
 package ru.job4j.urlshotcut.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,7 +14,11 @@ import ru.job4j.urlshotcut.dto.CodeResponse;
 import ru.job4j.urlshotcut.service.SiteService;
 import ru.job4j.urlshotcut.service.UrlService;
 
+import javax.naming.AuthenticationException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -24,11 +29,13 @@ public class UrlController {
 
     private final UrlService urlService;
     private final SiteService siteService;
+    private final ObjectMapper objectMapper;
 
     @PostMapping("/convert")
     public ResponseEntity<CodeResponse> convert(
             @Valid @RequestBody Url url,
-            @CurrentSecurityContext(expression = "authentication") Authentication authentication) {
+            @CurrentSecurityContext(expression = "authentication") Authentication authentication)
+                throws AuthenticationException {
         Optional<Url> foundUrl = urlService.findByUrl(url.getUrl());
         if (foundUrl.isPresent()) {
             return new ResponseEntity<>(
@@ -36,12 +43,10 @@ public class UrlController {
                     HttpStatus.FOUND
             );
         }
-        Optional<Site> site = siteService.findByLogin(authentication.getPrincipal().toString());
+        String login = authentication.getPrincipal().toString();
+        Optional<Site> site = siteService.findByLogin(login);
         if (site.isEmpty()) {
-            return new ResponseEntity<>(
-                    new CodeResponse(),
-                    HttpStatus.UNAUTHORIZED
-            );
+            throw new AuthenticationException(String.format("Login %s not found", login));
         }
         Url newUrl = urlService.save(url, site.get());
         return new ResponseEntity<>(
@@ -78,5 +83,15 @@ public class UrlController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .contentLength(body.length())
                 .body(body);
+    }
+
+    @ExceptionHandler(value = { AuthenticationException.class })
+    public void exceptionHandler(Exception e, HttpServletRequest request,
+                                 HttpServletResponse response) throws IOException {
+        response.setStatus(HttpStatus.BAD_REQUEST.value());
+        response.setContentType("application/json");
+        response.getWriter().write(objectMapper.writeValueAsString(new HashMap<>() { {
+            put("message", e.getMessage());
+        }}));
     }
 }
